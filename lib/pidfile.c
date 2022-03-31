@@ -126,6 +126,15 @@ pidfile(const char *basename)
 	return (0);
 }
 
+int
+pidfile_chown(uid_t uid, gid_t gid) {
+    /*
+     * Chown without exposing the pidfile_path
+     * all appropriate error handling is expected of the caller
+     */
+    return chown(pidfile_path, uid, gid);
+}
+
 static void
 pidfile_cleanup(void)
 {

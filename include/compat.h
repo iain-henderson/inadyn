@@ -39,7 +39,8 @@
 int     mkpath     (char *dir, mode_t mode);
 
 #ifndef pidfile
-int     pidfile    (const char *basename);
+int     pidfile       (const char *basename);
+int     pidfile_chown (uid_t uid, gid_t gid);
 #endif
 
 #ifndef strlcpy
