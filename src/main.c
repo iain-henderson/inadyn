@@ -143,6 +143,24 @@ static void free_context(ddns_t *ctx)
 static int drop_privs(void)
 {
 	if (uid) {
+        /* Determine if a PID file needs to be written */
+        if (once == 0 && pidfile_name[0]) {
+
+            /* Add signal handlers to insure cleanup of the PID file and create it */
+            if (os_install_signal_handler(NULL) && pidfile(pidfile_name)) {
+                logit(LOG_WARNING, "Failed creating pidfile: %s", strerror(errno));
+            }
+
+            /*
+             * Change the ownership of the PID file so that we can clean it up later
+             * This needs to fail as it can cause problems later if it doesn't
+             */
+            else if (pidfile_chown(uid, gid)) {
+                logit(LOG_WARNING, "Failed changing ownership of pidfile: %s", strerror(errno));
+                return 3;
+            }
+        }
+
 		if (gid != getgid()) {
 			if (setgid(gid))
 				return 2;
