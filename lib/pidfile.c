@@ -132,15 +132,6 @@ pidfile_chown(uid_t uid, gid_t gid) {
      * Chown without exposing the pidfile_path
      * all appropriate error handling is expected of the caller
      */
-    return chown(pidfile_path, uid, gid);
-}
-
-int
-pidfile_chown(uid_t uid, gid_t gid) {
-    /*
-     * Chown without exposing the pidfile_path
-     * all appropriate error handling is expected of the caller
-     */
     if (pidfile_path != NULL)
         return chown(pidfile_path, uid, gid);
     return (0);
