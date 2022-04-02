@@ -147,7 +147,7 @@ static int drop_privs(void)
         if (once == 0 && pidfile_name[0]) {
 
             /* Add signal handlers to insure cleanup of the PID file and create it */
-            if (os_install_signal_handler(NULL) && pidfile(pidfile_name)) {
+            if (pidfile(pidfile_name)) {
                 logit(LOG_WARNING, "Failed creating pidfile: %s", strerror(errno));
             }
 
@@ -538,12 +538,6 @@ int main(int argc, char *argv[])
 		force = 0;
 	}
 
-	if (drop_privs()) {
-		logit(LOG_WARNING, "Failed dropping privileges: %s", strerror(errno));
-		rc = RC_OS_CHANGE_PERSONA_FAILURE;
-		goto leave;
-	}
-
 	/* "Hello!" Let user know we've started up OK */
 	logit(LOG_NOTICE, "%s", VERSION_STRING);
 
@@ -572,7 +566,13 @@ int main(int argc, char *argv[])
 			break;
 		}
 
-		rc = ddns_main_loop(ctx);
+        if (drop_privs()) {
+            logit(LOG_WARNING, "Failed dropping privileges: %s", strerror(errno));
+            rc = RC_OS_CHANGE_PERSONA_FAILURE;
+            goto leave;
+        }
+
+        rc = ddns_main_loop(ctx);
 		if (rc == RC_RESTART)
 			restart = 1;
 
