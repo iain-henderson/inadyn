@@ -143,8 +143,9 @@ static void free_context(ddns_t *ctx)
 static int drop_privs(void)
 {
 	if (uid) {
+
         /* Determine if a PID file needs to be written */
-        if (once == 0 && pidfile_name[0]) {
+        if (!once && pidfile_name != NULL && pidfile_name[0]) {
 
             /* Add signal handlers to insure cleanup of the PID file and create it */
             if (pidfile(pidfile_name)) {
@@ -159,6 +160,15 @@ static int drop_privs(void)
                 logit(LOG_WARNING, "Failed changing ownership of pidfile: %s", strerror(errno));
                 return 3;
             }
+        }
+
+        /*
+         * Update the cache folder, so it can be written by the new user
+         * If this fails then caching fails, but functionality remains
+         */
+        if (cache_dir != NULL && cache_dir[0]) {
+            if (chown(cache_dir, uid, gid))
+                logit(LOG_WARNING, "Failed changing ownership of cache folder: %s", strerror(errno));
         }
 
 		if (gid != getgid()) {
@@ -530,7 +540,13 @@ int main(int argc, char *argv[])
 	/* Enable syslog or console debugging */
 	log_init(ident, use_syslog < 1 ? 0 : 1, background);
 
-	/* Check permission to write PID and cache files */
+    if (drop_privs()) {
+        logit(LOG_WARNING, "Failed dropping privileges: %s", strerror(errno));
+        rc = RC_OS_CHANGE_PERSONA_FAILURE;
+        goto leave;
+    }
+
+    /* Check permission to write PID and cache files */
 	if (!once) {
 		DO(os_check_perms());
 
@@ -565,12 +581,6 @@ int main(int argc, char *argv[])
 			free_context(ctx);
 			break;
 		}
-
-        if (drop_privs()) {
-            logit(LOG_WARNING, "Failed dropping privileges: %s", strerror(errno));
-            rc = RC_OS_CHANGE_PERSONA_FAILURE;
-            goto leave;
-        }
 
         rc = ddns_main_loop(ctx);
 		if (rc == RC_RESTART)
