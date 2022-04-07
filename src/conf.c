@@ -354,9 +354,7 @@ static int set_provider_opts(cfg_t *cfg, ddns_info_t *info, int custom)
 	str = cfg_getstr(cfg, "password");
 	if (str && strlen(str) <= sizeof(info->creds.password))
 		strlcpy(info->creds.password, str, sizeof(info->creds.password));
-	str = cfg_getstr(cfg, "iface");
-	if (str && strlen(str) <= sizeof(info->ifname))
-		strlcpy(info->ifname, str, sizeof(info->ifname));
+	info->ifname = cfg_getstr(cfg, "iface");
 
 	for (j = 0; j < cfg_size(cfg, "hostname"); j++) {
 		size_t pos = info->alias_count;
